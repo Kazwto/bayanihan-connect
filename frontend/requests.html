@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Browse Requests — Bayanihan Connect</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .post-btn-float { position:fixed;bottom:28px;right:28px;z-index:100; }
+    .urgency-dot { width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px; }
+    .urgency-dot.critical{background:#C62828;} .urgency-dot.high{background:#FF7043;} .urgency-dot.medium{background:#D4A017;} .urgency-dot.low{background:#66BB6A;}
+    .load-more-wrap { text-align:center; margin-top:24px; }
+    .search-wrap { position:relative; }
+    .search-wrap input { padding-left:38px; }
+    .search-wrap::before { content:''; position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3 3'/%3E%3C/svg%3E") no-repeat center/contain;pointer-events:none; }
+    .active-filters { display:flex;gap:6px;flex-wrap:wrap;margin-top:8px; }
+    .filter-chip { display:flex;align-items:center;gap:4px;background:var(--sand);border:1px solid var(--border-mid);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--navy); }
+    .filter-chip button { background:none;border:none;cursor:pointer;color:var(--text-light);font-size:14px;padding:0;line-height:1; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Community Help Platform</span></div></a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="requests.html" class="active">Browse Requests</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li id="nav-dash" style="display:none"><a href="dashboard.html">Dashboard</a></li>
+    <li id="nav-auth"><a href="login.html"><button class="nav-btn nav-btn-outline">Sign In</button></a> <a href="register.html"><button class="nav-btn nav-btn-primary">Join</button></a></li>
+    <li id="nav-user" style="display:none">
+      <div class="dropdown"><div id="nav-avatar" style="cursor:pointer"></div>
+        <div class="dropdown-menu" id="user-dd"><a href="dashboard.html">Dashboard</a><a href="profile.html">Profile</a><hr class="separator"><button onclick="Auth.logout()">Sign Out</button></div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Help Requests</h1>
+      <p class="page-subtitle" id="result-count">Loading requests...</p>
+    </div>
+    <a href="create-request.html" class="btn btn-primary" id="create-btn" style="display:none">+ Post Request</a>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="search-wrap" style="flex:2;min-width:200px">
+      <input type="text" class="form-control" id="search" placeholder="Search requests...">
+    </div>
+    <select class="form-control" id="filter-category">
+      <option value="">All Categories</option>
+      <option value="Emergency">Emergency</option>
+      <option value="Transport">Transport</option>
+      <option value="Food">Food</option>
+      <option value="Academic">Academic</option>
+      <option value="Technical">Technical</option>
+      <option value="Other">Other</option>
+    </select>
+    <select class="form-control" id="filter-urgency">
+      <option value="">Any Urgency</option>
+      <option value="critical">Critical</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <select class="form-control" id="filter-status">
+      <option value="pending">Pending</option>
+      <option value="in_progress">In Progress</option>
+      <option value="">All Status</option>
+    </select>
+    <input type="text" class="form-control" id="filter-location" placeholder="Filter by location...">
+    <button class="btn btn-outline" onclick="clearFilters()">Clear</button>
+  </div>
+  <div class="active-filters" id="active-filters"></div>
+
+  <!-- Request Grid -->
+  <div class="requests-grid" id="requests-grid" style="margin-top:20px">
+    <div class="card" style="text-align:center;padding:60px;grid-column:1/-1">
+      <div class="spinner" style="margin:0 auto"></div>
+    </div>
+  </div>
+
+  <div class="load-more-wrap" id="load-more-wrap" style="display:none">
+    <button class="btn btn-outline btn-lg" id="load-more-btn" onclick="loadMore()">Load More Requests</button>
+  </div>
+</div>
+
+<!-- Floating post button (mobile) -->
+<a href="create-request.html" class="btn btn-primary post-btn-float" id="float-btn" style="display:none;border-radius:50px;box-shadow:var(--shadow-lg)">+ Post Request</a>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  let offset = 0, total = 0;
+  const LIMIT = 12;
+
+  // Init nav
+  const user = Auth.getUser();
+  if (user) {
+    document.getElementById('nav-auth').style.display = 'none';
+    document.getElementById('nav-user').style.display = '';
+    document.getElementById('nav-dash').style.display = '';
+    document.getElementById('create-btn').style.display = '';
+    document.getElementById('float-btn').style.display = '';
+    const av = document.getElementById('nav-avatar');
+    av.innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+    av.addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+    document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+  }
+  document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
+
+  function getFilters() {
+    return {
+      search:   document.getElementById('search').value.trim(),
+      category: document.getElementById('filter-category').value,
+      urgency:  document.getElementById('filter-urgency').value,
+      status:   document.getElementById('filter-status').value,
+      location: document.getElementById('filter-location').value.trim()
+    };
+  }
+
+  function clearFilters() {
+    ['search','filter-location'].forEach(id => document.getElementById(id).value = '');
+    ['filter-category','filter-urgency','filter-status'].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = id === 'filter-status' ? 'pending' : '';
+    });
+    offset = 0;
+    loadRequests();
+  }
+
+  function renderActiveFilters() {
+    const f = getFilters();
+    const chips = [];
+    if (f.search)   chips.push({ label: `Search: "${f.search}"`,   key: 'search' });
+    if (f.category) chips.push({ label: `Category: ${f.category}`, key: 'filter-category' });
+    if (f.urgency)  chips.push({ label: `Urgency: ${f.urgency}`,   key: 'filter-urgency' });
+    if (f.location) chips.push({ label: `Location: ${f.location}`, key: 'filter-location' });
+    document.getElementById('active-filters').innerHTML = chips.map(c =>
+      `<div class="filter-chip">${c.label}<button onclick="document.getElementById('${c.key}').value='';loadRequests()">×</button></div>`
+    ).join('');
+  }
+
+  async function loadRequests(append = false) {
+    const grid = document.getElementById('requests-grid');
+    const f = getFilters();
+    if (!append) {
+      offset = 0;
+      grid.innerHTML = `<div class="card" style="text-align:center;padding:60px;grid-column:1/-1"><div class="spinner" style="margin:0 auto"></div></div>`;
+    }
+    renderActiveFilters();
+
+    try {
+      const params = { ...f, limit: LIMIT, offset };
+      // Remove empty params
+      Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+      const { ok, data } = await api.getRequests(params);
+      if (!ok) throw new Error(data.message);
+
+      total = data.total;
+      const requests = data.requests || [];
+      document.getElementById('result-count').textContent = `Showing ${Math.min(offset + LIMIT, total)} of ${total} requests`;
+      document.getElementById('load-more-wrap').style.display = offset + LIMIT < total ? '' : 'none';
+
+      if (!append) grid.innerHTML = '';
+
+      if (!requests.length && !append) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">🔍</div>
+          <h3>No requests found</h3>
+          <p>Try adjusting your filters or <a href="create-request.html">post a new request</a></p>
+        </div>`;
+        return;
+      }
+
+      grid.insertAdjacentHTML('beforeend', requests.map(r => `
+        <a href="request-detail.html?id=${r.id}" class="request-card urgency-${r.urgency_level}">
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            ${UI.categoryBadge(r.category_name, r.category_color)}
+            <div style="display:flex;gap:6px;flex-wrap:wrap">${UI.urgencyBadge(r.urgency_level)} ${UI.statusBadge(r.status)}</div>
+          </div>
+          <div class="request-card-title">${r.title}</div>
+          <div class="request-card-desc">${r.description}</div>
+          ${r.image_url ? `<img src="http://localhost:5000${r.image_url}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">` : ''}
+          <div class="request-card-meta">
+            <span>${UI.avatar(r.profile_picture, r.requester_name, 20)}&nbsp;${r.requester_name}</span>
+            ${r.location ? `<span>📍 ${r.location}</span>` : ''}
+            <span>${UI.timeAgo(r.created_at)}</span>
+            <span>🤝 ${r.offer_count} offer${r.offer_count != 1 ? 's' : ''}</span>
+          </div>
+        </a>
+      `).join(''));
+    } catch(e) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>Failed to load requests</h3><p>${e.message}</p></div>`;
+    }
+  }
+
+  function loadMore() {
+    offset += LIMIT;
+    loadRequests(true);
+  }
+
+  // Debounce search
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { offset = 0; loadRequests(); }, 400);
+  });
+  ['filter-category','filter-urgency','filter-status'].forEach(id =>
+    document.getElementById(id).addEventListener('change', () => { offset = 0; loadRequests(); })
+  );
+  let locTimer;
+  document.getElementById('filter-location').addEventListener('input', () => {
+    clearTimeout(locTimer);
+    locTimer = setTimeout(() => { offset = 0; loadRequests(); }, 500);
+  });
+
+  // Check URL params
+  const urlParams = new URLSearchParams(location.search);
+  if (urlParams.get('category')) document.getElementById('filter-category').value = urlParams.get('category');
+  if (urlParams.get('status'))   document.getElementById('filter-status').value   = urlParams.get('status');
+
+  loadRequests();
+</script>
+</body>
+</html>

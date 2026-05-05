@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Request Detail — Bayanihan Connect</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .back-link { display:inline-flex;align-items:center;gap:6px;color:var(--text-mid);font-size:14px;margin-bottom:20px;font-weight:500; }
+    .back-link:hover{color:var(--navy);}
+    .request-image { width:100%;max-height:320px;object-fit:cover;border-radius:var(--radius);margin-bottom:20px; }
+    .offer-card { border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;transition:all .2s; }
+    .offer-card.accepted { border-color:#27AE60;background:#F0FFF4; }
+    .offer-card.rejected { opacity:.6; }
+    .offer-card-header { display:flex;align-items:center;gap:12px;margin-bottom:8px; }
+    .offer-actions { display:flex;gap:8px;margin-top:10px; }
+    .offer-profession { font-size:12px;background:var(--sand);color:var(--brown);padding:2px 10px;border-radius:20px;font-weight:600; }
+    .star-rating { display:flex;gap:4px; }
+    .star { font-size:24px;cursor:pointer;color:#ddd;transition:color .15s; }
+    .star.active,.star:hover { color:var(--gold); }
+    #rating-stars:hover .star { color:var(--gold); }
+    #rating-stars .star:hover ~ .star { color:#ddd; }
+    .info-row { display:flex;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px; }
+    .info-row:last-child{border:none}
+    .info-label{font-weight:600;color:var(--text-mid);min-width:100px}
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Community Help Platform</span></div></a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="requests.html">Browse Requests</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li id="nav-dash" style="display:none"><a href="dashboard.html">Dashboard</a></li>
+    <li id="nav-auth"><a href="login.html"><button class="nav-btn nav-btn-outline">Sign In</button></a></li>
+    <li id="nav-user" style="display:none">
+      <div class="dropdown"><div id="nav-avatar" style="cursor:pointer"></div>
+        <div class="dropdown-menu" id="user-dd"><a href="dashboard.html">Dashboard</a><a href="profile.html">Profile</a><hr class="separator"><button onclick="Auth.logout()">Sign Out</button></div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <a href="requests.html" class="back-link">← Back to Requests</a>
+
+  <div class="layout-sidebar" id="main-layout">
+    <!-- Left: Request details -->
+    <div>
+      <div id="request-content">
+        <div class="card" style="padding:60px;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+
+      <!-- Offers section -->
+      <div id="offers-section" style="display:none;margin-top:24px">
+        <div class="page-header" style="margin-bottom:16px">
+          <h2 style="font-family:var(--font-head);font-size:22px;color:var(--navy)">Help Offers <span id="offer-badge" class="badge badge-pending" style="font-size:14px;vertical-align:middle"></span></h2>
+        </div>
+        <div id="offers-list"></div>
+      </div>
+
+      <!-- Messages -->
+      <div id="chat-section" style="display:none;margin-top:24px">
+        <h2 style="font-family:var(--font-head);font-size:22px;color:var(--navy);margin-bottom:16px">Messages</h2>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-row">
+            <input type="text" class="form-control" id="msg-input" placeholder="Type a message...">
+            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div id="sidebar-content"></div>
+  </div>
+</div>
+
+<!-- Offer modal -->
+<div class="modal-overlay" id="offer-modal">
+  <div class="modal">
+    <div class="modal-header"><h2 class="modal-title">Offer to Help</h2><button class="modal-close" onclick="closeOfferModal()">×</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text-mid);margin-bottom:16px;font-size:14px">Let the requester know why you're the right person to help.</p>
+      <div class="form-group">
+        <label class="form-label">Your Message (optional)</label>
+        <textarea class="form-control" id="offer-message" rows="4" placeholder="Describe your skills, experience, or how you can help..."></textarea>
+      </div>
+      <div id="offer-error" class="form-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeOfferModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitOffer()">Submit Offer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rate modal -->
+<div class="modal-overlay" id="rate-modal">
+  <div class="modal">
+    <div class="modal-header"><h2 class="modal-title">Rate Your Helper</h2><button class="modal-close" onclick="closeRateModal()">×</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text-mid);margin-bottom:16px;font-size:14px">How was your experience with <strong id="rate-helper-name"></strong>?</p>
+      <div class="form-group">
+        <label class="form-label">Rating</label>
+        <div class="star-rating" id="rating-stars">
+          <span class="star" data-val="1" onclick="setRating(1)">★</span>
+          <span class="star" data-val="2" onclick="setRating(2)">★</span>
+          <span class="star" data-val="3" onclick="setRating(3)">★</span>
+          <span class="star" data-val="4" onclick="setRating(4)">★</span>
+          <span class="star" data-val="5" onclick="setRating(5)">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comment (optional)</label>
+        <textarea class="form-control" id="rate-comment" rows="3" placeholder="Share your experience..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeRateModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="submitRating()">Submit Rating</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  const reqId  = new URLSearchParams(location.search).get('id');
+  const user   = Auth.getUser();
+  let currentRequest = null, ratingHelperId = null, selectedRating = 0;
+
+  // Nav
+  (function() {
+    if (!reqId) { window.location.href = 'requests.html'; return; }
+    if (user) {
+      document.getElementById('nav-auth').style.display = 'none';
+      document.getElementById('nav-user').style.display = '';
+      document.getElementById('nav-dash').style.display = '';
+      const av = document.getElementById('nav-avatar');
+      av.innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+      av.addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+    }
+    document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
+    document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+  })();
+
+  async function loadPage() {
+    try {
+      const { ok, data } = await api.getRequest(reqId);
+      if (!ok) { window.location.href = 'requests.html'; return; }
+      currentRequest = data.request;
+      renderRequest(data.request);
+      renderSidebar(data.request);
+      renderOffers(data.offers || [], data.request);
+      if (user) checkChatAccess(data.offers || [], data.request);
+    } catch(e) {
+      document.getElementById('request-content').innerHTML = `<div class="card"><p>Failed to load request.</p></div>`;
+    }
+  }
+
+  function renderRequest(r) {
+    const isOwner = user && user.id === r.user_id;
+    document.getElementById('request-content').innerHTML = `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${UI.categoryBadge(r.category_name, r.category_color)}
+            ${UI.urgencyBadge(r.urgency_level)}
+            ${UI.statusBadge(r.status)}
+          </div>
+          ${isOwner ? `<div style="display:flex;gap:8px">
+            <a href="edit-request.html?id=${r.id}" class="btn btn-outline btn-sm">Edit</a>
+            <button class="btn btn-sm" style="background:#FBE9E7;color:#BF360C;border:none" onclick="deleteRequest()">Delete</button>
+          </div>` : ''}
+        </div>
+        <h1 style="font-family:var(--font-head);font-size:26px;color:var(--navy);margin-bottom:12px">${r.title}</h1>
+        ${r.image_url ? `<img src="http://localhost:5000${r.image_url}" class="request-image" alt="Request image">` : ''}
+        <p style="color:var(--text-mid);line-height:1.75;font-size:15px;margin-bottom:20px">${r.description}</p>
+        <div>
+          <div class="info-row"><span class="info-label">Requester</span><span style="display:flex;align-items:center;gap:8px">${UI.avatar(r.profile_picture, r.requester_name, 28)} ${r.requester_name}</span></div>
+          ${r.location ? `<div class="info-row"><span class="info-label">Location</span><span>📍 ${r.location}</span></div>` : ''}
+          <div class="info-row"><span class="info-label">Posted</span><span>${new Date(r.created_at).toLocaleString('en-PH', {dateStyle:'medium',timeStyle:'short'})}</span></div>
+          <div class="info-row"><span class="info-label">Status</span>${UI.statusBadge(r.status)}</div>
+        </div>
+        ${isOwner && r.status === 'resolved' ? `<div style="margin-top:16px"><button class="btn btn-outline btn-sm" onclick="reopenRequest()">Re-open Request</button></div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderSidebar(r) {
+    const isOwner = user && user.id === r.user_id;
+    const canHelp = user && user.id !== r.user_id && ['requester','helper','both'].includes(user.role) && ['pending','in_progress'].includes(r.status);
+    const canResolve = isOwner && r.status === 'in_progress';
+    const canCancel  = isOwner && ['pending','in_progress'].includes(r.status);
+
+    document.getElementById('sidebar-content').innerHTML = `
+      <div style="position:sticky;top:calc(var(--nav-h) + 16px);display:flex;flex-direction:column;gap:16px">
+        ${canHelp ? `<div class="card">
+          <h3 style="font-family:var(--font-head);font-size:18px;color:var(--navy);margin-bottom:10px">Can you help?</h3>
+          <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px">Offer your skills or assistance to this request.</p>
+          <button class="btn btn-primary btn-block" onclick="openOfferModal()">I Can Help</button>
+        </div>` : ''}
+        ${canResolve ? `<div class="card" style="border-left:4px solid #27AE60">
+          <h3 style="font-family:var(--font-head);font-size:18px;color:var(--navy);margin-bottom:10px">Mark as Resolved</h3>
+          <p style="font-size:14px;color:var(--text-mid);margin-bottom:14px">Mark this request as completed once help has been received.</p>
+          <button class="btn btn-block" style="background:#27AE60;color:#fff" onclick="resolveRequest()">Mark Resolved</button>
+        </div>` : ''}
+        ${canCancel ? `<div class="card">
+          <button class="btn btn-outline btn-block btn-sm" onclick="cancelRequest()">Cancel Request</button>
+        </div>` : ''}
+        <div class="card">
+          <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:10px">Quick Info</h3>
+          <div style="font-size:13px;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
+            <div>Category: <strong>${r.category_name}</strong></div>
+            <div>Urgency: <strong>${r.urgency_level}</strong></div>
+            ${r.location ? `<div>Location: <strong>${r.location}</strong></div>` : ''}
+          </div>
+        </div>
+        ${!user ? `<div class="card" style="background:var(--sand);text-align:center">
+          <p style="font-size:14px;margin-bottom:12px">Sign in to offer help</p>
+          <a href="login.html" class="btn btn-primary btn-block">Sign In</a>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderOffers(offers, request) {
+    const section = document.getElementById('offers-section');
+    const list    = document.getElementById('offers-list');
+    if (!offers.length && (!user || user.id !== request.user_id)) return;
+
+    section.style.display = '';
+    document.getElementById('offer-badge').textContent = offers.length;
+
+    if (!offers.length) {
+      list.innerHTML = `<div class="empty-state"><p>No offers yet. Be the first to help!</p></div>`;
+      return;
+    }
+
+    const isOwner = user && user.id === request.user_id;
+    list.innerHTML = offers.map(o => {
+      const statusCls = o.status === 'accepted' ? 'accepted' : o.status === 'rejected' ? 'rejected' : '';
+      return `
+        <div class="offer-card ${statusCls}" style="margin-bottom:12px">
+          <div class="offer-card-header">
+            ${UI.avatar(o.profile_picture, o.helper_name, 40)}
+            <div style="flex:1">
+              <div style="font-weight:700;color:var(--navy);font-size:15px">${o.helper_name}</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap">
+                ${o.profession ? `<span class="offer-profession">${o.profession}</span>` : ''}
+                <span style="font-size:12px;color:var(--text-light)">${UI.timeAgo(o.created_at)}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              ${o.status !== 'pending' ? `<span class="badge ${o.status === 'accepted' ? 'badge-resolved' : 'badge-cancelled'}">${o.status}</span>` : ''}
+              <span style="font-size:12px;color:var(--text-light)">⭐ ${o.badge_count} badge${o.badge_count != 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          ${o.message ? `<p style="font-size:14px;color:var(--text-mid);padding:10px;background:var(--cream);border-radius:8px">${o.message}</p>` : ''}
+          ${isOwner && o.status === 'pending' ? `
+            <div class="offer-actions">
+              <button class="btn btn-sm" style="background:#E8F5E9;color:#2E7D32;border:none" onclick="respondOffer(${o.id},'accepted')">Accept</button>
+              <button class="btn btn-sm btn-outline" onclick="respondOffer(${o.id},'rejected')">Decline</button>
+            </div>` : ''}
+          ${isOwner && o.status === 'accepted' && request.status === 'resolved' ? `
+            <div class="offer-actions">
+              <button class="btn btn-sm btn-gold" onclick="openRateModal(${o.helper_id}, '${o.helper_name}')">Rate Helper</button>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function checkChatAccess(offers, request) {
+    const isOwner = user.id === request.user_id;
+    const isHelper = offers.some(o => o.helper_id === user.id && o.status === 'accepted');
+    if (isOwner || isHelper) {
+      document.getElementById('chat-section').style.display = '';
+      loadMessages();
+      document.getElementById('msg-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+    }
+  }
+
+  async function loadMessages() {
+    try {
+      const { data } = await api.getMessages(reqId);
+      const messages = data.messages || [];
+      const container = document.getElementById('chat-messages');
+      if (!messages.length) {
+        container.innerHTML = `<div style="text-align:center;color:var(--text-light);font-size:13px;padding:20px">No messages yet. Start the conversation!</div>`;
+        return;
+      }
+      container.innerHTML = messages.map(m => {
+        const mine = user && m.sender_id === user.id;
+        return `<div>
+          <div class="chat-msg ${mine ? 'mine' : 'theirs'}">
+            ${!mine ? `<div style="font-size:11px;font-weight:700;margin-bottom:4px;opacity:.7">${m.sender_name}</div>` : ''}
+            ${m.message}
+            <div class="chat-msg-meta">${UI.timeAgo(m.timestamp)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    } catch(e) {}
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    try {
+      const { ok, data } = await api.sendMessage({ request_id: reqId, message: text });
+      if (ok) loadMessages();
+      else UI.toast(data.message, 'error');
+    } catch(e) { UI.toast('Failed to send message', 'error'); }
+  }
+
+  function openOfferModal() {
+    if (!Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+    document.getElementById('offer-modal').classList.add('open');
+  }
+  function closeOfferModal() { document.getElementById('offer-modal').classList.remove('open'); }
+
+  async function submitOffer() {
+    const msg = document.getElementById('offer-message').value.trim();
+    const errEl = document.getElementById('offer-error');
+    errEl.style.display = 'none';
+    try {
+      const { ok, data } = await api.submitOffer({ request_id: reqId, message: msg });
+      if (ok) { closeOfferModal(); UI.toast('Offer submitted!'); loadPage(); }
+      else { errEl.textContent = data.message; errEl.style.display = 'block'; }
+    } catch(e) { errEl.textContent = 'Error submitting offer'; errEl.style.display = 'block'; }
+  }
+
+  async function respondOffer(offerId, status) {
+    try {
+      const { ok, data } = await api.updateOffer(offerId, status);
+      if (ok) { UI.toast(`Offer ${status}`); loadPage(); }
+      else UI.toast(data.message, 'error');
+    } catch(e) { UI.toast('Error updating offer', 'error'); }
+  }
+
+  async function resolveRequest() {
+    if (!confirm('Mark this request as resolved?')) return;
+    const { ok, data } = await api.updateRequest(reqId, (() => { const fd = new FormData(); fd.append('status','resolved'); return fd; })());
+    if (ok) { UI.toast('Request marked as resolved!'); loadPage(); }
+    else UI.toast(data.message, 'error');
+  }
+
+  async function cancelRequest() {
+    if (!confirm('Cancel this request?')) return;
+    const fd = new FormData(); fd.append('status','cancelled');
+    const { ok, data } = await api.updateRequest(reqId, fd);
+    if (ok) { UI.toast('Request cancelled'); loadPage(); }
+    else UI.toast(data.message, 'error');
+  }
+
+  async function deleteRequest() {
+    if (!confirm('Delete this request permanently?')) return;
+    const { ok, data } = await api.deleteRequest(reqId);
+    if (ok) { UI.toast('Request deleted'); window.location.href = 'requests.html'; }
+    else UI.toast(data.message, 'error');
+  }
+
+  function openRateModal(helperId, helperName) {
+    ratingHelperId = helperId;
+    document.getElementById('rate-helper-name').textContent = helperName;
+    document.getElementById('rate-modal').classList.add('open');
+  }
+  function closeRateModal() { document.getElementById('rate-modal').classList.remove('open'); selectedRating = 0; setRating(0); }
+
+  function setRating(val) {
+    selectedRating = val;
+    document.querySelectorAll('#rating-stars .star').forEach((s, i) => s.classList.toggle('active', i < val));
+  }
+
+  async function submitRating() {
+    if (!selectedRating) { UI.toast('Please select a rating', 'warning'); return; }
+    const { ok, data } = await api.rateHelper({ request_id: reqId, helper_id: ratingHelperId, rating: selectedRating, comment: document.getElementById('rate-comment').value });
+    if (ok) { closeRateModal(); UI.toast('Rating submitted!'); }
+    else UI.toast(data.message, 'error');
+  }
+
+  loadPage();
+</script>
+</body>
+</html>

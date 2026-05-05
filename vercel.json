@@ -1,0 +1,23 @@
+{
+  "buildCommand": "cd backend && npm install",
+  "outputDirectory": "frontend",
+  "installCommand": "npm install --prefix backend",
+  "public": false,
+  "functions": {
+    "api/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "index.html"
+    }
+  ]
+}
+

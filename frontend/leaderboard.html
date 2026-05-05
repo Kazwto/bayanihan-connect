@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Leaderboard — Bayanihan Connect</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .lb-hero { background:linear-gradient(135deg,var(--navy),var(--navy-mid)); color:#fff; padding:40px; border-radius:var(--radius-lg); margin-bottom:32px; text-align:center; position:relative; overflow:hidden; }
+    .lb-hero::before { content:'🏆'; position:absolute; font-size:180px; opacity:.05; right:-20px; top:-20px; line-height:1; }
+    .lb-hero h1 { font-family:var(--font-head); font-size:32px; margin-bottom:8px; }
+    .lb-hero p { opacity:.8; font-size:15px; }
+    .podium { display:flex; align-items:flex-end; justify-content:center; gap:12px; margin-bottom:32px; }
+    .podium-place { flex:1; max-width:180px; text-align:center; }
+    .podium-block { border-radius:var(--radius) var(--radius) 0 0; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:28px; font-weight:700; color:#fff; }
+    .podium-place:nth-child(1) .podium-block { height:100px; background:linear-gradient(135deg,#9E9E9E,#BDBDBD); }
+    .podium-place:nth-child(2) .podium-block { height:130px; background:linear-gradient(135deg,var(--gold),var(--gold-light)); }
+    .podium-place:nth-child(3) .podium-block { height:80px;  background:linear-gradient(135deg,#CD7F32,#D4956A); }
+    .podium-name { font-weight:700; font-size:14px; color:var(--navy); margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .podium-score { font-size:12px; color:var(--text-light); }
+    .lb-list { display:flex; flex-direction:column; gap:10px; }
+    .lb-item { display:flex; align-items:center; gap:16px; padding:16px 20px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); transition:all .2s; }
+    .lb-item:hover { box-shadow:var(--shadow-md); transform:translateX(4px); }
+    .lb-rank { font-family:var(--font-head); font-size:22px; font-weight:700; min-width:36px; text-align:center; color:var(--text-light); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#9E9E9E; }
+    .lb-item:nth-child(3) .lb-rank { color:#CD7F32; }
+    .lb-info { flex:1; }
+    .lb-name { font-weight:700; font-size:15px; color:var(--navy); }
+    .lb-meta { font-size:12px; color:var(--text-light); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap; }
+    .lb-stats { display:flex; gap:16px; text-align:center; flex-shrink:0; }
+    .lb-stat-val { font-family:var(--font-head); font-size:18px; font-weight:700; color:var(--navy); }
+    .lb-stat-lbl { font-size:11px; color:var(--text-light); text-transform:uppercase; letter-spacing:.5px; }
+    .star-rating-display { color:var(--gold); font-size:13px; }
+    .badge-chip { display:inline-flex; align-items:center; gap:4px; background:var(--sand); border:1px solid var(--border-mid); border-radius:20px; padding:2px 8px; font-size:11px; font-weight:600; color:var(--navy); }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Community Help Platform</span></div></a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="requests.html">Browse Requests</a></li>
+    <li><a href="leaderboard.html" class="active">Leaderboard</a></li>
+    <li id="nav-dash" style="display:none"><a href="dashboard.html">Dashboard</a></li>
+    <li id="nav-auth"><a href="login.html"><button class="nav-btn nav-btn-outline">Sign In</button></a> <a href="register.html"><button class="nav-btn nav-btn-primary">Join</button></a></li>
+    <li id="nav-user" style="display:none">
+      <div class="dropdown"><div id="nav-avatar" style="cursor:pointer"></div>
+        <div class="dropdown-menu" id="user-dd"><a href="dashboard.html">Dashboard</a><a href="profile.html">Profile</a><hr class="separator"><button onclick="Auth.logout()">Sign Out</button></div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <!-- Hero -->
+  <div class="lb-hero">
+    <h1>Community Leaderboard</h1>
+    <p>Celebrating the most helpful members of Bayanihan Connect</p>
+  </div>
+
+  <div class="layout-sidebar">
+    <!-- Main leaderboard -->
+    <div>
+      <!-- Podium top 3 -->
+      <div id="podium-section" style="display:none">
+        <h2 style="font-family:var(--font-head);font-size:22px;color:var(--navy);margin-bottom:20px;text-align:center">Top 3 Helpers</h2>
+        <div class="podium" id="podium"></div>
+      </div>
+
+      <h2 style="font-family:var(--font-head);font-size:22px;color:var(--navy);margin-bottom:16px">Rankings</h2>
+      <div class="lb-list" id="lb-list">
+        <div class="lb-item" style="justify-content:center;padding:40px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Badges sidebar -->
+    <div style="position:sticky;top:calc(var(--nav-h)+16px)">
+      <div class="card" style="margin-bottom:20px">
+        <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy);margin-bottom:16px">Available Badges</h2>
+        <div id="badges-list"></div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,var(--navy),var(--navy-mid));color:#fff;text-align:center">
+        <h3 style="font-family:var(--font-head);font-size:18px;margin-bottom:8px">Want to be here?</h3>
+        <p style="font-size:13px;opacity:.8;margin-bottom:16px">Start helping your community and earn your place on the leaderboard!</p>
+        <a href="requests.html" class="btn btn-gold btn-block">Browse Requests</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  // Nav
+  const user = Auth.getUser();
+  if (user) {
+    document.getElementById('nav-auth').style.display = 'none';
+    document.getElementById('nav-user').style.display = '';
+    document.getElementById('nav-dash').style.display = '';
+    const av = document.getElementById('nav-avatar');
+    av.innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+    av.addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+  }
+  document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
+  document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+
+  function badgeEmoji(icon) {
+    return { seedling:'🌱', bolt:'⚡', hands:'🙌', heart:'❤️', trophy:'🏆', star:'⭐' }[icon] || '🏅';
+  }
+
+  function stars(rating) {
+    const r = Math.round(rating * 2) / 2;
+    return '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '') + '☆'.repeat(5 - Math.ceil(r));
+  }
+
+  async function loadLeaderboard() {
+    const { data: lbData }  = await api.leaderboard();
+    const { data: bdgData } = await api.allBadges();
+    const lb = lbData.leaderboard || [];
+
+    // Podium
+    if (lb.length >= 3) {
+      document.getElementById('podium-section').style.display = '';
+      // Reorder: 2nd, 1st, 3rd for visual podium
+      const podiumOrder = [lb[1], lb[0], lb[2]];
+      document.getElementById('podium').innerHTML = podiumOrder.map((p, i) => `
+        <div class="podium-place">
+          ${UI.avatar(p.profile_picture, p.name, 52)}
+          <div class="podium-name">${p.name}</div>
+          <div class="podium-score">${p.resolved_count} resolved</div>
+          <div class="podium-block">${i === 1 ? '1' : i === 0 ? '2' : '3'}</div>
+        </div>`).join('');
+    }
+
+    // Full list
+    const lbList = document.getElementById('lb-list');
+    if (!lb.length) {
+      lbList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><h3>No helpers yet</h3><p>Be the first to help!</p></div>`;
+      return;
+    }
+    lbList.innerHTML = lb.map((h, idx) => {
+      const isMe = user && user.id === h.id;
+      return `<div class="lb-item" style="${isMe ? 'border-color:var(--gold);background:linear-gradient(135deg,#FFFEF0,#FFF)' : ''}">
+        <div class="lb-rank">${idx + 1}</div>
+        ${UI.avatar(h.profile_picture, h.name, 44)}
+        <div class="lb-info">
+          <div class="lb-name">${h.name} ${isMe ? '<span style="font-size:11px;color:var(--gold);font-weight:600">(You)</span>' : ''}</div>
+          <div class="lb-meta">
+            ${h.profession ? `<span>🔧 ${h.profession}</span>` : ''}
+            ${h.location   ? `<span>📍 ${h.location}</span>` : ''}
+            ${h.avg_rating > 0 ? `<span class="star-rating-display">${stars(h.avg_rating)} ${parseFloat(h.avg_rating).toFixed(1)}</span>` : ''}
+          </div>
+          ${h.badge_count > 0 ? `<div style="margin-top:6px"><span class="badge-chip">🏅 ${h.badge_count} badge${h.badge_count != 1 ? 's' : ''}</span></div>` : ''}
+        </div>
+        <div class="lb-stats">
+          <div><div class="lb-stat-val">${h.resolved_count}</div><div class="lb-stat-lbl">Resolved</div></div>
+          <div><div class="lb-stat-val">${h.badge_points}</div><div class="lb-stat-lbl">Points</div></div>
+          <div><div class="lb-stat-val">${h.total_offers}</div><div class="lb-stat-lbl">Offers</div></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Badges sidebar
+    const badges = bdgData.badges || [];
+    document.getElementById('badges-list').innerHTML = badges.map(b => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:50%;background:${b.color}22;color:${b.color};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${badgeEmoji(b.icon)}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;color:var(--navy)">${b.name}</div>
+          <div style="font-size:11px;color:var(--text-light)">${b.description}</div>
+          <div style="font-size:11px;color:${b.color};font-weight:600;margin-top:2px">${b.min_points} pts required</div>
+        </div>
+      </div>`).join('');
+  }
+
+  loadLeaderboard();
+</script>
+</body>
+</html>

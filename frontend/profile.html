@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Profile — Bayanihan Connect</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .profile-header { background:linear-gradient(135deg,var(--navy),var(--navy-mid)); border-radius:var(--radius-lg); padding:36px 40px; color:#fff; display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; margin-bottom:28px; }
+    .profile-avatar-large { position:relative; flex-shrink:0; }
+    .profile-avatar-large img, .profile-avatar-large .avatar-placeholder { width:100px; height:100px; font-size:38px; border:3px solid rgba(255,255,255,.3); }
+    .change-photo-btn { position:absolute;bottom:0;right:0;width:30px;height:30px;background:var(--gold);border-radius:50%;border:2px solid var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px; }
+    .profile-info { flex:1; }
+    .profile-info h1 { font-family:var(--font-head); font-size:26px; margin-bottom:6px; }
+    .profile-info .meta { font-size:14px; opacity:.75; display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+    .profile-info .meta span { display:flex; align-items:center; gap:4px; }
+    .profile-stats { display:flex; gap:24px; margin-top:16px; flex-wrap:wrap; }
+    .profile-stat { text-align:center; }
+    .profile-stat .val { font-family:var(--font-head); font-size:22px; font-weight:700; }
+    .profile-stat .lbl { font-size:11px; opacity:.65; text-transform:uppercase; letter-spacing:.8px; margin-top:2px; }
+    .role-pill { display:inline-block; background:rgba(212,160,23,.25); border:1px solid rgba(212,160,23,.4); color:var(--gold-light); padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; margin-top:8px; }
+    .edit-section { display:none; }
+    .edit-section.open { display:block; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Community Help Platform</span></div></a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="requests.html">Browse Requests</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+    <li>
+      <div class="dropdown"><div id="nav-avatar" style="cursor:pointer"></div>
+        <div class="dropdown-menu" id="user-dd">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="profile.html">My Profile</a>
+          <hr class="separator">
+          <button onclick="Auth.logout()">Sign Out</button>
+        </div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <a href="dashboard.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-mid);font-size:14px;margin-bottom:20px;font-weight:500">← Back to Dashboard</a>
+
+  <div id="profile-header-wrap"></div>
+
+  <div class="grid-2" style="gap:24px;align-items:start">
+    <!-- Edit Profile Form -->
+    <div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy)">Edit Profile</h2>
+        </div>
+        <form id="profile-form" enctype="multipart/form-data">
+          <div style="text-align:center;margin-bottom:20px">
+            <div class="profile-avatar-large" style="display:inline-block">
+              <div id="edit-avatar"></div>
+              <label for="photo-input" class="change-photo-btn" title="Change photo">📷</label>
+              <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="previewPhoto(event)">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="p-name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" class="form-control" id="p-location" placeholder="e.g. Poblacion, Davao City">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-control" id="p-role">
+              <option value="requester">Requester</option>
+              <option value="helper">Helper</option>
+              <option value="both">Both (Requester & Helper)</option>
+            </select>
+          </div>
+          <div class="form-group" id="profession-wrap">
+            <label class="form-label">Profession / Skills</label>
+            <input type="text" class="form-control" id="p-profession" placeholder="e.g. Nurse, Electrician, Tutor">
+            <div class="form-hint">Displayed on your help offers to show your expertise</div>
+          </div>
+          <div id="profile-error" class="form-error" style="display:none;margin-bottom:12px"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="save-btn">Save Changes</button>
+        </form>
+      </div>
+
+      <!-- Change Password -->
+      <div class="card" style="margin-top:20px">
+        <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy);margin-bottom:20px">Change Password</h2>
+        <form id="password-form">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input type="password" class="form-control" id="cur-pwd" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" class="form-control" id="new-pwd" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" class="form-control" id="confirm-pwd" required>
+          </div>
+          <div id="pwd-error" class="form-error" style="display:none;margin-bottom:12px"></div>
+          <button type="submit" class="btn btn-outline btn-block" id="pwd-btn">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Badges sidebar -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="card">
+        <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy);margin-bottom:16px">My Badges</h2>
+        <div id="badge-display"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy);margin-bottom:16px">All Available Badges</h2>
+        <div id="all-badges-display"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  Auth.requireAuth();
+  const user = Auth.getUser();
+  let currentPhotoFile = null;
+
+  // Nav
+  const av = document.getElementById('nav-avatar');
+  av.innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+  av.addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+  document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+  document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
+
+  async function loadProfile() {
+    const { data } = await api.me();
+    const me = data.user;
+
+    // Header
+    document.getElementById('profile-header-wrap').innerHTML = `
+      <div class="profile-header">
+        <div class="profile-avatar-large">
+          ${UI.avatar(me.profile_picture, me.name, 100)}
+        </div>
+        <div class="profile-info">
+          <div class="role-pill">${me.role}</div>
+          <h1>${me.name}</h1>
+          ${me.profession ? `<div style="font-size:14px;color:var(--gold-light);margin-top:4px">🔧 ${me.profession}</div>` : ''}
+          <div class="meta">
+            <span>✉️ ${me.email}</span>
+            ${me.location ? `<span>📍 ${me.location}</span>` : ''}
+            <span>📅 Joined ${new Date(me.created_at).toLocaleDateString('en-PH',{year:'numeric',month:'long'})}</span>
+          </div>
+          <div class="profile-stats">
+            <div class="profile-stat"><div class="val">${me.total_requests}</div><div class="lbl">Requests</div></div>
+            <div class="profile-stat"><div class="val">${me.total_offers}</div><div class="lbl">Offers</div></div>
+            <div class="profile-stat"><div class="val">${me.resolved_count}</div><div class="lbl">Resolved</div></div>
+            <div class="profile-stat"><div class="val">${me.badge_points}</div><div class="lbl">Points</div></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Fill form
+    document.getElementById('p-name').value       = me.name;
+    document.getElementById('p-location').value   = me.location || '';
+    document.getElementById('p-role').value        = me.role;
+    document.getElementById('p-profession').value  = me.profession || '';
+    document.getElementById('edit-avatar').innerHTML = UI.avatar(me.profile_picture, me.name, 80);
+
+    // Badges
+    const { data: ubData } = await api.userBadges(user.id);
+    const { data: allBData } = await api.allBadges();
+    renderBadges(ubData.badges || [], allBData.badges || [], me.badge_points);
+  }
+
+  function renderBadges(earned, all, points) {
+    const earnedIds = earned.map(b => b.id);
+
+    // Earned
+    const earnEl = document.getElementById('badge-display');
+    if (!earned.length) {
+      earnEl.innerHTML = `<div class="empty-state" style="padding:16px"><p>No badges yet. Help others to earn them!</p></div>`;
+    } else {
+      earnEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px">
+        ${earned.map(b => `
+          <div class="badge-card earned" title="${b.description}">
+            <div class="badge-icon" style="background:${b.color}22;color:${b.color}">${badgeEmoji(b.icon)}</div>
+            <div class="badge-name">${b.name}</div>
+            <div class="badge-desc">${new Date(b.earned_at).toLocaleDateString('en-PH',{month:'short',year:'numeric'})}</div>
+          </div>`).join('')}
+      </div>`;
+    }
+
+    // All badges
+    const allEl = document.getElementById('all-badges-display');
+    allEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">
+      ${all.map(b => {
+        const isEarned = earnedIds.includes(b.id);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;background:${isEarned ? b.color+'11' : 'var(--cream)'};border:1px solid ${isEarned ? b.color+'33' : 'var(--border)'};opacity:${isEarned ? 1 : 0.6}">
+          <div style="width:36px;height:36px;border-radius:50%;background:${b.color}22;color:${b.color};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${badgeEmoji(b.icon)}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px;color:var(--navy)">${b.name} ${isEarned ? '✓' : ''}</div>
+            <div style="font-size:12px;color:var(--text-light)">${b.description}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:${isEarned ? b.color : 'var(--text-light)'};">${b.min_points} pts</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function previewPhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    currentPhotoFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('edit-avatar').innerHTML = `<img src="${url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(27,42,74,.2)">`;
+  }
+
+  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn   = document.getElementById('save-btn');
+    const errEl = document.getElementById('profile-error');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    errEl.style.display = 'none';
+
+    const fd = new FormData();
+    fd.append('name',       document.getElementById('p-name').value);
+    fd.append('location',   document.getElementById('p-location').value);
+    fd.append('role',       document.getElementById('p-role').value);
+    fd.append('profession', document.getElementById('p-profession').value);
+    if (currentPhotoFile) fd.append('profile_picture', currentPhotoFile);
+
+    const { ok, data } = await api.updateProfile(fd);
+    if (ok) {
+      Auth.setSession(localStorage.getItem('bc_token'), data.user);
+      UI.toast('Profile updated!');
+      loadProfile();
+    } else {
+      errEl.textContent = data.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.textContent = 'Save Changes';
+  });
+
+  document.getElementById('password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn   = document.getElementById('pwd-btn');
+    const errEl = document.getElementById('pwd-error');
+    const np    = document.getElementById('new-pwd').value;
+    const cp    = document.getElementById('confirm-pwd').value;
+    errEl.style.display = 'none';
+
+    if (np !== cp) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Updating...';
+    const { ok, data } = await api.changePassword({
+      current_password: document.getElementById('cur-pwd').value,
+      new_password: np
+    });
+    if (ok) {
+      UI.toast('Password changed!');
+      document.getElementById('password-form').reset();
+    } else {
+      errEl.textContent = data.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.textContent = 'Update Password';
+  });
+
+  function badgeEmoji(icon) {
+    return { seedling:'🌱', bolt:'⚡', hands:'🙌', heart:'❤️', trophy:'🏆', star:'⭐' }[icon] || '🏅';
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

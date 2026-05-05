@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard — Bayanihan Connect</title>
+  <!-- API Configuration -->
+  <script>
+    window.API_BASE_URL = 'https://bayanihan-connect.vercel.app/api';
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .welcome-banner { background:linear-gradient(135deg,var(--navy),var(--navy-mid)); color:#fff; border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; display:flex; align-items:center; gap:20px; }
+    .welcome-text h2 { font-family:var(--font-head); font-size:22px; margin-bottom:4px; }
+    .welcome-text p { font-size:14px; opacity:.8; }
+    .stat-icon-bg { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .stat-card-inner { display:flex; align-items:center; gap:14px; }
+    .points-bar-wrap { background:var(--border); border-radius:20px; height:8px; flex:1; overflow:hidden; }
+    .points-bar { height:100%; border-radius:20px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); transition:width .8s ease; }
+    .badge-mini { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .request-row { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); }
+    .request-row:last-child { border:none; }
+    .request-row-info { flex:1; min-width:0; }
+    .request-row-title { font-weight:600; font-size:14px; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .request-row-meta { font-size:12px; color:var(--text-light); margin-top:2px; }
+    .notif-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .notif-item:last-child { border:none; }
+    .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--blue); flex-shrink:0; margin-top:6px; }
+    .notif-dot.read { background:var(--border); }
+    .notif-content { flex:1; }
+    .notif-title { font-size:14px; font-weight:600; color:var(--navy); }
+    .notif-msg { font-size:13px; color:var(--text-mid); margin-top:2px; }
+    .notif-time { font-size:11px; color:var(--text-light); margin-top:3px; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Community Help Platform</span></div></a>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="requests.html">Browse Requests</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    <li id="nav-admin-li" style="display:none"><a href="admin.html">Admin</a></li>
+    <li>
+      <div class="dropdown">
+        <div id="nav-avatar" style="cursor:pointer;display:flex;align-items:center;gap:8px">
+          <div id="nav-av-img"></div>
+          <div class="notif-badge"><button class="btn-ghost btn-sm" id="notif-btn" style="padding:6px 8px;color:rgba(255,255,255,.8);background:none;font-size:14px">🔔</button><span class="notif-count" id="notif-count" style="display:none">0</span></div>
+        </div>
+        <div class="dropdown-menu" id="user-dd">
+          <a href="profile.html">My Profile</a>
+          <a href="create-request.html">Post New Request</a>
+          <hr class="separator">
+          <button onclick="Auth.logout()">Sign Out</button>
+        </div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <!-- Welcome banner -->
+  <div class="welcome-banner" id="welcome-banner">
+    <div id="banner-avatar"></div>
+    <div class="welcome-text">
+      <h2 id="welcome-name">Welcome back!</h2>
+      <p id="welcome-sub">Loading your dashboard...</p>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">
+      <a href="create-request.html" class="btn btn-gold">+ Post Request</a>
+      <a href="requests.html" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.4)">Browse Requests</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4" id="stats-row" style="margin-bottom:28px">
+    <div class="card stat-card">
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#EEF2FF">📋</div><div><div class="stat-value" id="s-requests">0</div><div class="stat-label">My Requests</div></div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#E8F5E9">✅</div><div><div class="stat-value" id="s-resolved">0</div><div class="stat-label">Resolved</div></div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FFF8E1">🤝</div><div><div class="stat-value" id="s-offers">0</div><div class="stat-label">Offers Made</div></div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FCE4EC">⭐</div><div><div class="stat-value" id="s-points">0</div><div class="stat-label">Badge Points</div></div></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:24px;align-items:start">
+    <!-- Left column -->
+    <div style="display:flex;flex-direction:column;gap:24px">
+
+      <!-- My Requests -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy)">My Help Requests</h2>
+          <a href="create-request.html" class="btn btn-primary btn-sm">+ New</a>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchReqTab('active',this)">Active</button>
+          <button class="tab" onclick="switchReqTab('resolved',this)">Resolved</button>
+          <button class="tab" onclick="switchReqTab('all',this)">All</button>
+        </div>
+        <div id="my-requests-list"><div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div></div>
+      </div>
+
+      <!-- My Offers -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy)">Help I've Offered</h2>
+        </div>
+        <div id="my-offers-list"><div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:24px">
+
+      <!-- Badges & Points -->
+      <div class="card">
+        <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy);margin-bottom:16px">My Badges</h2>
+        <div id="badges-section"></div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-family:var(--font-head);font-size:20px;color:var(--navy)">Notifications</h2>
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"><div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error('Not authenticated');
+  const user = Auth.getUser();
+
+  // Nav
+  document.getElementById('nav-av-img').innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+  if (user.role === 'admin') document.getElementById('nav-admin-li').style.display = '';
+  document.getElementById('nav-avatar').addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+  document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+  document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
+
+  let allMyRequests = [];
+
+  async function loadDashboard() {
+    // Welcome banner
+    const { data: meData } = await api.me();
+    const me = meData.user;
+    document.getElementById('banner-avatar').innerHTML = UI.avatar(me.profile_picture, me.name, 56);
+    document.getElementById('welcome-name').textContent = `Welcome back, ${me.name.split(' ')[0]}!`;
+    document.getElementById('welcome-sub').textContent = `${me.location || 'Your community'} · ${me.role.charAt(0).toUpperCase() + me.role.slice(1)}`;
+
+    document.getElementById('s-points').textContent   = me.badge_points;
+    document.getElementById('s-requests').textContent = me.total_requests;
+    document.getElementById('s-resolved').textContent = me.resolved_count;
+
+    // My requests
+    const { data: reqData } = await api.myRequests();
+    allMyRequests = reqData.requests || [];
+    document.getElementById('s-requests').textContent = allMyRequests.length;
+    document.getElementById('s-resolved').textContent = allMyRequests.filter(r => r.status === 'resolved').length;
+    renderMyRequests('active');
+
+    // My offers
+    const { data: offerData } = await api.myOffers();
+    const offers = offerData.offers || [];
+    document.getElementById('s-offers').textContent = offers.length;
+    renderMyOffers(offers);
+
+    // Badges
+    const { data: badgeData } = await api.userBadges(user.id);
+    const { data: allBadgeData } = await api.allBadges();
+    renderBadges(badgeData.badges || [], allBadgeData.badges || [], me.badge_points);
+
+    // Notifications
+    loadNotifications();
+  }
+
+  function switchReqTab(filter, btn) {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderMyRequests(filter);
+  }
+
+  function renderMyRequests(filter) {
+    const container = document.getElementById('my-requests-list');
+    let filtered = allMyRequests;
+    if (filter === 'active')   filtered = allMyRequests.filter(r => ['pending','in_progress'].includes(r.status));
+    if (filter === 'resolved') filtered = allMyRequests.filter(r => r.status === 'resolved');
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <h3>No ${filter} requests</h3>
+        <p><a href="create-request.html">Post a new help request</a></p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map(r => `
+      <div class="request-row">
+        <div style="width:4px;height:44px;border-radius:4px;background:${urgencyColor(r.urgency_level)};flex-shrink:0"></div>
+        <div class="request-row-info">
+          <div class="request-row-title">${r.title}</div>
+          <div class="request-row-meta">${UI.timeAgo(r.created_at)} · ${r.offer_count} offer${r.offer_count != 1 ? 's' : ''} · ${r.category_name}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          ${UI.statusBadge(r.status)}
+          <div style="display:flex;gap:4px">
+            <a href="request-detail.html?id=${r.id}" class="btn btn-ghost btn-sm" style="padding:4px 8px">View</a>
+            ${['pending','in_progress'].includes(r.status) ? `<a href="create-request.html?id=${r.id}" class="btn btn-ghost btn-sm" style="padding:4px 8px">Edit</a>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderMyOffers(offers) {
+    const container = document.getElementById('my-offers-list');
+    if (!offers.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div><h3>No offers yet</h3><p><a href="requests.html">Browse requests to help</a></p></div>`;
+      return;
+    }
+    container.innerHTML = offers.slice(0, 8).map(o => `
+      <div class="request-row">
+        <div style="flex-shrink:0">${UI.categoryBadge(o.category_name, o.category_color)}</div>
+        <div class="request-row-info">
+          <div class="request-row-title">${o.title}</div>
+          <div class="request-row-meta">Requester: ${o.requester_name} · ${UI.timeAgo(o.created_at)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <span class="badge ${o.status === 'accepted' ? 'badge-resolved' : o.status === 'rejected' ? 'badge-cancelled' : 'badge-pending'}">${o.status}</span>
+          <a href="request-detail.html?id=${o.request_id}" class="btn btn-ghost btn-sm" style="padding:4px 8px">View</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderBadges(earned, all, points) {
+    const nextBadge = all.filter(b => b.min_points > points).sort((a,b) => a.min_points - b.min_points)[0];
+    const earnedIds = earned.map(b => b.id);
+    const maxPoints = all.length ? all[all.length - 1].min_points : 50;
+    const progress  = Math.min(100, (points / maxPoints) * 100);
+
+    let html = `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:13px;font-weight:600;color:var(--text-mid)">Badge Points</span>
+          <span style="font-size:14px;font-weight:700;color:var(--navy)">${points} pts</span>
+        </div>
+        <div class="points-bar-wrap"><div class="points-bar" style="width:${progress}%"></div></div>
+        ${nextBadge ? `<div style="font-size:12px;color:var(--text-light);margin-top:4px">${nextBadge.min_points - points} more points to earn "${nextBadge.name}"</div>` : '<div style="font-size:12px;color:#27AE60;margin-top:4px">All badges earned!</div>'}
+      </div>
+    `;
+
+    if (earned.length) {
+      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px">
+        ${earned.map(b => `
+          <div class="badge-card earned" title="${b.description}">
+            <div class="badge-icon" style="background:${b.color}22;color:${b.color}">${badgeEmoji(b.icon)}</div>
+            <div class="badge-name" style="font-size:11px">${b.name}</div>
+          </div>`).join('')}
+      </div>`;
+    } else {
+      html += `<div class="empty-state" style="padding:24px">
+        <p>Complete help requests to earn badges!</p>
+        <a href="requests.html" class="btn btn-outline btn-sm" style="margin-top:10px">Browse Requests</a>
+      </div>`;
+    }
+    document.getElementById('badges-section').innerHTML = html;
+  }
+
+  async function loadNotifications() {
+    const { data } = await api.notifications();
+    const notifs = data.notifications || [];
+    const unread = data.unread || 0;
+
+    // Update nav badge
+    const countEl = document.getElementById('notif-count');
+    if (unread > 0) { countEl.textContent = unread > 9 ? '9+' : unread; countEl.style.display = ''; }
+
+    const container = document.getElementById('notif-list');
+    if (!notifs.length) {
+      container.innerHTML = `<div class="empty-state" style="padding:20px"><p>No notifications yet</p></div>`;
+      return;
+    }
+    container.innerHTML = notifs.slice(0, 8).map(n => `
+      <div class="notif-item">
+        <div class="notif-dot ${n.is_read ? 'read' : ''}"></div>
+        <div class="notif-content">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-msg">${n.message}</div>
+          <div class="notif-time">${UI.timeAgo(n.created_at)}</div>
+        </div>
+        ${n.reference_id ? `<a href="request-detail.html?id=${n.reference_id}" class="btn btn-ghost btn-sm">View</a>` : ''}
+      </div>
+    `).join('');
+  }
+
+  async function markAllRead() {
+    await api.markNotifRead();
+    document.getElementById('notif-count').style.display = 'none';
+    document.querySelectorAll('.notif-dot').forEach(d => d.classList.add('read'));
+    UI.toast('Notifications marked as read');
+  }
+
+  function urgencyColor(u) {
+    return { critical: '#C62828', high: '#FF7043', medium: '#D4A017', low: '#66BB6A' }[u] || '#D4A017';
+  }
+
+  function badgeEmoji(icon) {
+    const map = { seedling:'🌱', bolt:'⚡', hands:'🙌', heart:'❤️', trophy:'🏆', star:'⭐' };
+    return map[icon] || '🏅';
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

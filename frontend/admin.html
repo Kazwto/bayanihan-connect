@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Dashboard — Bayanihan Connect</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-nav { display:flex; gap:4px; background:var(--sand); border-radius:var(--radius); padding:6px; margin-bottom:28px; flex-wrap:wrap; }
+    .admin-nav-btn { flex:1; min-width:120px; padding:10px 16px; border:none; border-radius:var(--radius-sm); background:none; font-size:13px; font-weight:600; color:var(--text-mid); cursor:pointer; transition:all .2s; text-align:center; }
+    .admin-nav-btn.active { background:#fff; color:var(--navy); box-shadow:var(--shadow-sm); }
+    .admin-panel { display:none; }
+    .admin-panel.active { display:block; }
+    .stat-card-admin { border-left:4px solid; }
+    .stat-card-admin.blue { border-color:var(--blue); }
+    .stat-card-admin.green { border-color:#27AE60; }
+    .stat-card-admin.orange { border-color:#E65100; }
+    .stat-card-admin.red { border-color:var(--red); }
+    .stat-card-admin.purple { border-color:#8E44AD; }
+    .user-row td:first-child { font-weight:600; }
+    .action-btns { display:flex; gap:6px; }
+    .bar-wrap { background:var(--border); border-radius:4px; height:10px; overflow:hidden; margin-top:4px; }
+    .bar-fill  { height:100%; border-radius:4px; transition:width .6s ease; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="nav-logo-icon"><div class="nav-logo-text"><span class="brand-name">Bayanihan Connect</span><span class="brand-tagline">Admin Panel</span></div></a>
+  <ul class="nav-links">
+    <li><a href="dashboard.html">User Dashboard</a></li>
+    <li>
+      <div class="dropdown"><div id="nav-avatar" style="cursor:pointer"></div>
+        <div class="dropdown-menu" id="user-dd"><a href="profile.html">My Profile</a><hr class="separator"><button onclick="Auth.logout()">Sign Out</button></div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-container">
+  <div class="page-header" style="margin-bottom:20px">
+    <div>
+      <h1 class="page-title">Admin Dashboard</h1>
+      <p class="page-subtitle">System overview and moderation tools</p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="openBroadcast()">Broadcast Notification</button>
+    </div>
+  </div>
+
+  <!-- Admin tabs -->
+  <div class="admin-nav">
+    <button class="admin-nav-btn active" onclick="switchPanel('overview', this)">Overview</button>
+    <button class="admin-nav-btn" onclick="switchPanel('requests', this)">Manage Requests</button>
+    <button class="admin-nav-btn" onclick="switchPanel('users', this)">Manage Users</button>
+  </div>
+
+  <!-- Overview -->
+  <div class="admin-panel active" id="panel-overview">
+    <div class="grid-4" style="margin-bottom:24px" id="overview-stats">
+      <div class="card stat-card stat-card-admin blue"><div class="stat-value" id="ov-users">...</div><div class="stat-label">Total Users</div></div>
+      <div class="card stat-card stat-card-admin green"><div class="stat-value" id="ov-requests">...</div><div class="stat-label">Total Requests</div></div>
+      <div class="card stat-card stat-card-admin orange"><div class="stat-value" id="ov-pending">...</div><div class="stat-label">Pending</div></div>
+      <div class="card stat-card stat-card-admin green"><div class="stat-value" id="ov-resolved">...</div><div class="stat-label">Resolved</div></div>
+      <div class="card stat-card stat-card-admin purple"><div class="stat-value" id="ov-offers">...</div><div class="stat-label">Total Offers</div></div>
+      <div class="card stat-card stat-card-admin blue"><div class="stat-value" id="ov-messages">...</div><div class="stat-label">Messages Sent</div></div>
+    </div>
+
+    <div class="grid-2" style="gap:24px">
+      <!-- Category chart -->
+      <div class="card">
+        <h3 style="font-family:var(--font-head);font-size:18px;color:var(--navy);margin-bottom:16px">Requests by Category</h3>
+        <div id="cat-chart"></div>
+      </div>
+      <!-- Recent activity -->
+      <div class="card">
+        <h3 style="font-family:var(--font-head);font-size:18px;color:var(--navy);margin-bottom:16px">Recent Requests</h3>
+        <div id="recent-activity"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requests Panel -->
+  <div class="admin-panel" id="panel-requests">
+    <div class="filter-bar" style="margin-bottom:16px">
+      <select class="form-control" id="req-filter-status" onchange="loadAdminRequests()">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <select class="form-control" id="req-filter-cat" onchange="loadAdminRequests()">
+        <option value="">All Categories</option>
+        <option>Emergency</option><option>Transport</option><option>Food</option>
+        <option>Academic</option><option>Technical</option><option>Other</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Title</th><th>Category</th><th>Requester</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody id="requests-tbody"><tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></td></tr></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn btn-outline btn-sm" id="req-prev" onclick="adminReqPage(-1)">Previous</button>
+      <span id="req-page-info" style="align-self:center;font-size:13px;color:var(--text-mid)"></span>
+      <button class="btn btn-outline btn-sm" id="req-next" onclick="adminReqPage(1)">Next</button>
+    </div>
+  </div>
+
+  <!-- Users Panel -->
+  <div class="admin-panel" id="panel-users">
+    <div class="filter-bar" style="margin-bottom:16px">
+      <input type="text" class="form-control" id="user-search" placeholder="Search by name or email..." oninput="debounceUsers()">
+      <select class="form-control" id="user-role-filter" onchange="loadAdminUsers()">
+        <option value="">All Roles</option>
+        <option value="requester">Requester</option>
+        <option value="helper">Helper</option>
+        <option value="both">Both</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Location</th><th>Requests</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="8" style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Broadcast Modal -->
+<div class="modal-overlay" id="broadcast-modal">
+  <div class="modal">
+    <div class="modal-header"><h2 class="modal-title">Broadcast Notification</h2><button class="modal-close" onclick="closeBroadcast()">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px">Send a notification to all active users.</p>
+      <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" id="bc-title" placeholder="Announcement title"></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" id="bc-message" rows="3" placeholder="Your message..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeBroadcast()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendBroadcast()">Send to All Users</button>
+    </div>
+  </div>
+</div>
+
+<!-- Status change modal -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal">
+    <div class="modal-header"><h2 class="modal-title">Change Request Status</h2><button class="modal-close" onclick="document.getElementById('status-modal').classList.remove('open')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">New Status</label>
+        <select class="form-control" id="new-status">
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('status-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmStatusChange()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/api.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error();
+  const user = Auth.getUser();
+  if (user.role !== 'admin') window.location.href = 'index.html';
+
+  const av = document.getElementById('nav-avatar');
+  av.innerHTML = UI.avatar(user.profile_picture, user.name, 36);
+  av.addEventListener('click', () => document.getElementById('user-dd').classList.toggle('open'));
+  document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
+
+  let reqOffset = 0, statusTargetId = null;
+  const REQ_LIMIT = 15;
+
+  function switchPanel(id, btn) {
+    document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${id}`).classList.add('active');
+    if (id === 'requests') loadAdminRequests();
+    if (id === 'users')    loadAdminUsers();
+  }
+
+  async function loadOverview() {
+    const { data } = await api.adminStats();
+    const s = data.stats;
+    document.getElementById('ov-users').textContent    = s.total_users;
+    document.getElementById('ov-requests').textContent = s.total_requests;
+    document.getElementById('ov-pending').textContent  = s.pending;
+    document.getElementById('ov-resolved').textContent = s.resolved;
+    document.getElementById('ov-offers').textContent   = s.total_offers;
+    document.getElementById('ov-messages').textContent = s.total_messages;
+
+    // Category chart
+    const maxCount = Math.max(...s.category_stats.map(c => c.count));
+    document.getElementById('cat-chart').innerHTML = s.category_stats.map(c => `
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span style="font-weight:600;color:var(--navy)">${c.name}</span>
+          <span style="color:var(--text-mid)">${c.count}</span>
+        </div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${maxCount ? (c.count/maxCount*100) : 0}%;background:${c.color}"></div></div>
+      </div>`).join('');
+
+    // Recent activity
+    document.getElementById('recent-activity').innerHTML = (s.recent_requests || []).map(r => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.title}</div>
+          <div style="font-size:11px;color:var(--text-light)">${r.requester_name} · ${UI.timeAgo(r.created_at)}</div>
+        </div>
+        ${UI.statusBadge(r.status)}
+      </div>`).join('') || '<div class="empty-state" style="padding:20px"><p>No recent activity</p></div>';
+  }
+
+  async function loadAdminRequests() {
+    const tbody = document.getElementById('requests-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+    const params = {
+      status:   document.getElementById('req-filter-status').value,
+      category: document.getElementById('req-filter-cat').value,
+      limit:    REQ_LIMIT,
+      offset:   reqOffset
+    };
+    const { data } = await api.adminRequests(params);
+    const requests = data.requests || [];
+
+    if (!requests.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-light)">No requests found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = requests.map(r => `
+      <tr>
+        <td style="color:var(--text-light)">#${r.id}</td>
+        <td><a href="request-detail.html?id=${r.id}" style="font-weight:600;color:var(--navy)">${r.title.substring(0,50)}${r.title.length > 50 ? '...' : ''}</a></td>
+        <td>${UI.categoryBadge(r.category_name, '#1B4F8A')}</td>
+        <td style="font-size:13px">${r.requester_name}<br><span style="color:var(--text-light);font-size:11px">${r.requester_email}</span></td>
+        <td>${UI.statusBadge(r.status)}</td>
+        <td style="font-size:12px;color:var(--text-light)">${UI.timeAgo(r.created_at)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-ghost btn-sm" onclick="openStatusModal(${r.id}, '${r.status}')">Status</button>
+            <button class="btn btn-sm" style="background:#FBE9E7;color:#BF360C;border:none" onclick="adminDeleteRequest(${r.id})">Delete</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('req-page-info').textContent = `Page ${Math.floor(reqOffset/REQ_LIMIT)+1}`;
+    document.getElementById('req-prev').disabled = reqOffset === 0;
+    document.getElementById('req-next').disabled = requests.length < REQ_LIMIT;
+  }
+
+  function adminReqPage(dir) {
+    reqOffset = Math.max(0, reqOffset + dir * REQ_LIMIT);
+    loadAdminRequests();
+  }
+
+  async function adminDeleteRequest(id) {
+    if (!confirm('Permanently delete this request?')) return;
+    const { ok, data } = await api.adminDeleteRequest(id);
+    if (ok) { UI.toast('Request deleted'); loadAdminRequests(); }
+    else UI.toast(data.message, 'error');
+  }
+
+  function openStatusModal(id, current) {
+    statusTargetId = id;
+    document.getElementById('new-status').value = current;
+    document.getElementById('status-modal').classList.add('open');
+  }
+
+  async function confirmStatusChange() {
+    const status = document.getElementById('new-status').value;
+    const { ok, data } = await api.adminUpdateStatus(statusTargetId, status);
+    document.getElementById('status-modal').classList.remove('open');
+    if (ok) { UI.toast('Status updated'); loadAdminRequests(); }
+    else UI.toast(data.message, 'error');
+  }
+
+  async function loadAdminUsers() {
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+    const params = {
+      search: document.getElementById('user-search').value.trim(),
+      role:   document.getElementById('user-role-filter').value
+    };
+    const { data } = await api.adminUsers(params);
+    const users = data.users || [];
+
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-light)">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr style="opacity:${u.is_active ? 1 : .5}">
+        <td style="color:var(--text-light)">#${u.id}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${UI.avatar(u.profile_picture, u.name, 30)}
+            <span style="font-weight:600">${u.name}</span>
+          </div>
+        </td>
+        <td style="font-size:13px;color:var(--text-mid)">${u.email}</td>
+        <td><span class="badge badge-pending" style="text-transform:capitalize">${u.role}</span></td>
+        <td style="font-size:13px">${u.location || '—'}</td>
+        <td style="font-size:13px;text-align:center">${u.request_count}</td>
+        <td><span class="badge ${u.is_active ? 'badge-resolved' : 'badge-cancelled'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-ghost btn-sm" onclick="toggleUser(${u.id})">
+              ${u.is_active ? 'Deactivate' : 'Activate'}
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function toggleUser(id) {
+    const { ok, data } = await api.adminToggleUser(id);
+    if (ok) { UI.toast(data.message); loadAdminUsers(); }
+    else UI.toast(data.message, 'error');
+  }
+
+  let userSearchTimer;
+  function debounceUsers() { clearTimeout(userSearchTimer); userSearchTimer = setTimeout(loadAdminUsers, 400); }
+
+  function openBroadcast() { document.getElementById('broadcast-modal').classList.add('open'); }
+  function closeBroadcast() { document.getElementById('broadcast-modal').classList.remove('open'); }
+
+  async function sendBroadcast() {
+    const title   = document.getElementById('bc-title').value.trim();
+    const message = document.getElementById('bc-message').value.trim();
+    if (!title || !message) { UI.toast('Title and message required', 'warning'); return; }
+    const { ok, data } = await api.adminBroadcast({ title, message });
+    if (ok) { closeBroadcast(); UI.toast('Broadcast sent to all users!'); document.getElementById('bc-title').value = ''; document.getElementById('bc-message').value = ''; }
+    else UI.toast(data.message, 'error');
+  }
+
+  loadOverview();
+</script>
+</body>
+</html>

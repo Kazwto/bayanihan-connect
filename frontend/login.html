@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Bayanihan Connect</title>
+  <!-- API Configuration -->
+  <script>
+    window.API_BASE_URL = 'https://bayanihan-connect.vercel.app/api';
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%); padding:20px; }
+    .auth-card { background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); width:100%; max-width:440px; padding:40px; }
+    .auth-logo { text-align:center; margin-bottom:28px; }
+    .auth-logo-icon { width:60px;height:60px; background:var(--gold); border-radius:14px; font-family:var(--font-head); font-size:24px; font-weight:800; color:var(--navy); display:inline-flex;align-items:center;justify-content:center; margin-bottom:12px; box-shadow:0 4px 16px rgba(212,160,23,.3); }
+    .auth-logo h1 { font-family:var(--font-head); font-size:22px; color:var(--navy); }
+    .auth-logo p { font-size:13px; color:var(--text-light); margin-top:2px; }
+    .auth-tabs { display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; margin-bottom:24px; }
+    .auth-tab { flex:1; padding:10px; background:none; border:none; font-size:14px; font-weight:600; cursor:pointer; color:var(--text-light); transition:all .2s; }
+    .auth-tab.active { background:var(--navy); color:#fff; }
+    .auth-panel { display:none; }
+    .auth-panel.active { display:block; }
+    .divider { text-align:center; font-size:12px; color:var(--text-light); margin:16px 0; position:relative; }
+    .divider::before,.divider::after { content:''; position:absolute; top:50%; width:42%; height:1px; background:var(--border); }
+    .divider::before { left:0; } .divider::after { right:0; }
+    .role-select { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+    .role-opt { border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:10px 6px; text-align:center; cursor:pointer; transition:all .2s; }
+    .role-opt input { display:none; }
+    .role-opt label { font-size:13px; font-weight:600; cursor:pointer; color:var(--text-mid); display:block; }
+    .role-opt:has(input:checked) { border-color:var(--navy); background:var(--sand); }
+    .role-opt:has(input:checked) label { color:var(--navy); }
+  </style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-logo">
+    <img src="images/LOGO.png" alt="Bayanihan Connect Logo" class="auth-logo-icon" style="width:60px;height:60px;border-radius:14px;box-shadow:0 4px 16px rgba(212,160,23,.3);">
+    <h1>Bayanihan Connect</h1>
+    <p>Community Help Platform</p>
+  </div>
+
+  <div class="auth-tabs">
+    <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+    <button class="auth-tab" onclick="switchTab('register')">Register</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="auth-panel active" id="panel-login">
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="login-email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="login-password" placeholder="Your password" required>
+      </div>
+      <div id="login-error" class="form-error" style="display:none;margin-bottom:12px"></div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">Sign In</button>
+    </form>
+    <p style="text-align:center;font-size:13px;color:var(--text-light);margin-top:16px">
+      No account? <a href="#" onclick="switchTab('register')">Create one</a>
+    </p>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="auth-panel" id="panel-register">
+    <form id="register-form" enctype="multipart/form-data">
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" id="reg-name" placeholder="Juan dela Cruz" required>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="reg-email" placeholder="juan@email.com" required>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" id="reg-password" placeholder="Min. 6 chars" required minlength="6">
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">Location</label>
+          <input type="text" class="form-control" id="reg-location" placeholder="e.g. Davao City">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">I am a...</label>
+        <div class="role-select">
+          <div class="role-opt"><input type="radio" name="role" id="r-req" value="requester"><label for="r-req">Requester</label></div>
+          <div class="role-opt"><input type="radio" name="role" id="r-hlp" value="helper"><label for="r-hlp">Helper</label></div>
+          <div class="role-opt"><input type="radio" name="role" id="r-both" value="both" checked><label for="r-both">Both</label></div>
+        </div>
+      </div>
+      <div class="form-group" id="profession-group" style="margin-bottom:12px">
+        <label class="form-label">Profession / Skills <span style="color:var(--text-light);font-weight:400">(optional)</span></label>
+        <input type="text" class="form-control" id="reg-profession" placeholder="e.g. Nurse, Electrician, Tutor">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Profile Photo <span style="color:var(--text-light);font-weight:400">(optional)</span></label>
+        <input type="file" class="form-control" id="reg-photo" accept="image/*">
+      </div>
+      <div id="reg-error" class="form-error" style="display:none;margin-bottom:12px"></div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="reg-btn">Create Account</button>
+    </form>
+    <p style="text-align:center;font-size:13px;color:var(--text-light);margin-top:16px">
+      Already have an account? <a href="#" onclick="switchTab('login')">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  // Redirect if already logged in
+  if (Auth.isLoggedIn()) window.location.href = 'dashboard.html';
+
+  // Check URL param
+  const urlTab = new URLSearchParams(location.search).get('tab');
+  if (urlTab === 'register') switchTab('register');
+
+  function switchTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((el, i) => el.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register')));
+    document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+    document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+  }
+
+  // Login
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+    btn.disabled = true; btn.textContent = 'Signing in...';
+    errEl.style.display = 'none';
+    try {
+      const { ok, data } = await api.login({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value
+      });
+      if (ok) {
+        Auth.setSession(data.token, data.user);
+        window.location.href = data.user.role === 'admin' ? 'admin.html' : 'dashboard.html';
+      } else {
+        errEl.textContent = data.message || 'Login failed';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Sign In';
+      }
+    } catch {
+      errEl.textContent = 'Connection error. Is the server running?';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  });
+
+  // Register
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('reg-btn');
+    const errEl = document.getElementById('reg-error');
+    btn.disabled = true; btn.textContent = 'Creating account...';
+    errEl.style.display = 'none';
+
+    const fd = new FormData();
+    fd.append('name',       document.getElementById('reg-name').value);
+    fd.append('email',      document.getElementById('reg-email').value);
+    fd.append('password',   document.getElementById('reg-password').value);
+    fd.append('location',   document.getElementById('reg-location').value);
+    fd.append('role',       document.querySelector('input[name="role"]:checked').value);
+    fd.append('profession', document.getElementById('reg-profession').value);
+    const photo = document.getElementById('reg-photo').files[0];
+    if (photo) fd.append('profile_picture', photo);
+
+    try {
+      const { ok, data } = await api.register(fd);
+      if (ok) {
+        Auth.setSession(data.token, data.user);
+        UI.toast('Welcome to Bayanihan Connect!');
+        window.location.href = 'dashboard.html';
+      } else {
+        errEl.textContent = data.message || 'Registration failed';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Create Account';
+      }
+    } catch {
+      errEl.textContent = 'Connection error. Is the server running?';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Create Account';
+    }
+  });
+</script>
+</body>
+</html>

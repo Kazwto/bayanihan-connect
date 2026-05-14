@@ -4,9 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard — Bayanihan Connect</title>
   <!-- API Configuration -->
-  <script>
-    window.API_BASE_URL = 'https://bayanihan-connect.vercel.app/api';
-  </script>
+  <script src="js/config.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .welcome-banner { background:linear-gradient(135deg,var(--navy),var(--navy-mid)); color:#fff; border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; display:flex; align-items:center; gap:20px; }
@@ -46,7 +44,7 @@
       <div class="dropdown">
         <div id="nav-avatar" style="cursor:pointer;display:flex;align-items:center;gap:8px">
           <div id="nav-av-img"></div>
-          <div class="notif-badge"><button class="btn-ghost btn-sm" id="notif-btn" style="padding:6px 8px;color:rgba(255,255,255,.8);background:none;font-size:14px">🔔</button><span class="notif-count" id="notif-count" style="display:none">0</span></div>
+          <div class="notif-badge"><button class="btn-ghost btn-sm" id="notif-btn" style="padding:6px 8px;color:rgba(255,255,255,.8);background:none;font-size:14px"><img src="images/Bell.avif" alt="notifications" style="width:24px;height:24px"></button><span class="notif-count" id="notif-count" style="display:none">0</span></div>
         </div>
         <div class="dropdown-menu" id="user-dd">
           <a href="profile.html">My Profile</a>
@@ -76,16 +74,16 @@
   <!-- Stats -->
   <div class="grid-4" id="stats-row" style="margin-bottom:28px">
     <div class="card stat-card">
-      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#EEF2FF">📋</div><div><div class="stat-value" id="s-requests">0</div><div class="stat-label">My Requests</div></div></div>
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#EEF2FF">Req</div><div><div class="stat-value" id="s-requests">0</div><div class="stat-label">My Requests</div></div></div>
     </div>
     <div class="card stat-card">
-      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#E8F5E9">✅</div><div><div class="stat-value" id="s-resolved">0</div><div class="stat-label">Resolved</div></div></div>
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#E8F5E9">Done</div><div><div class="stat-value" id="s-resolved">0</div><div class="stat-label">Resolved</div></div></div>
     </div>
     <div class="card stat-card">
-      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FFF8E1">🤝</div><div><div class="stat-value" id="s-offers">0</div><div class="stat-label">Offers Made</div></div></div>
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FFF8E1">Help</div><div><div class="stat-value" id="s-offers">0</div><div class="stat-label">Offers Made</div></div></div>
     </div>
     <div class="card stat-card">
-      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FCE4EC">⭐</div><div><div class="stat-value" id="s-points">0</div><div class="stat-label">Badge Points</div></div></div>
+      <div class="stat-card-inner"><div class="stat-icon-bg" style="background:#FCE4EC">Pts</div><div><div class="stat-value" id="s-points">0</div><div class="stat-label">Badge Points</div></div></div>
     </div>
   </div>
 
@@ -200,7 +198,7 @@
 
     if (!filtered.length) {
       container.innerHTML = `<div class="empty-state">
-        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-icon">None</div>
         <h3>No ${filter} requests</h3>
         <p><a href="create-request.html">Post a new help request</a></p>
       </div>`;
@@ -228,7 +226,7 @@
   function renderMyOffers(offers) {
     const container = document.getElementById('my-offers-list');
     if (!offers.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div><h3>No offers yet</h3><p><a href="requests.html">Browse requests to help</a></p></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">Help</div><h3>No offers yet</h3><p><a href="requests.html">Browse requests to help</a></p></div>`;
       return;
     }
     container.innerHTML = offers.slice(0, 8).map(o => `
@@ -267,7 +265,7 @@
       html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px">
         ${earned.map(b => `
           <div class="badge-card earned" title="${b.description}">
-            <div class="badge-icon" style="background:${b.color}22;color:${b.color}">${badgeEmoji(b.icon)}</div>
+            <div class="badge-icon" style="background:${b.color}22;color:${b.color}">${badgeIconSvg(b.icon)}</div>
             <div class="badge-name" style="font-size:11px">${b.name}</div>
           </div>`).join('')}
       </div>`;
@@ -296,7 +294,7 @@
     }
     container.innerHTML = notifs.slice(0, 8).map(n => `
       <div class="notif-item">
-        <div class="notif-dot ${n.is_read ? 'read' : ''}"></div>
+        <img src="images/Bell.avif" alt="notification" class="notif-icon" style="width:28px;height:28px;flex-shrink:0;margin-top:2px">
         <div class="notif-content">
           <div class="notif-title">${n.title}</div>
           <div class="notif-msg">${n.message}</div>
@@ -318,9 +316,11 @@
     return { critical: '#C62828', high: '#FF7043', medium: '#D4A017', low: '#66BB6A' }[u] || '#D4A017';
   }
 
-  function badgeEmoji(icon) {
-    const map = { seedling:'🌱', bolt:'⚡', hands:'🙌', heart:'❤️', trophy:'🏆', star:'⭐' };
-    return map[icon] || '🏅';
+  function badgeIconSvg(icon) {
+    const id = { seedling:'seedling', bolt:'bolt', hands:'hands', heart:'heart', trophy:'trophy', star:'star' }[icon] || 'star';
+    return `<svg class="badge-icon-svg" aria-hidden="true" focusable="false">
+      <use href="images/badge-icons.svg#${id}"></use>
+    </svg>`;
   }
 
   loadDashboard();

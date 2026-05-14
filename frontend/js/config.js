@@ -6,5 +6,5 @@
   window.API_BASE_URL = 
     localStorage.getItem('api_base_url') ||
     document.currentScript?.dataset?.apiUrl ||
-    'http://localhost:5000/api';
+    'https://propeller-recite-imagines.ngrok-free.dev/api';
 })();

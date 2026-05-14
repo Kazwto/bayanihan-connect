@@ -78,11 +78,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n╔════════════════════════════════════════╗`);
-  console.log(`║   Bayanihan Connect API                ║`);
-  console.log(`║   Running on http://localhost:${PORT}     ║`);
-  console.log(`╚════════════════════════════════════════╝\n`);
-});
+// ── Server Start (Local Development Only) ───────────────────
+// In Vercel serverless, this will be skipped and the app will be exported
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n╔════════════════════════════════════════╗`);
+    console.log(`║   Bayanihan Connect API                ║`);
+    console.log(`║   Running on http://localhost:${PORT}     ║`);
+    console.log(`╚════════════════════════════════════════╝\n`);
+  });
+}
 
 module.exports = app;

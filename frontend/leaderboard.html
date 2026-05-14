@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     .lb-hero { background:linear-gradient(135deg,var(--navy),var(--navy-mid)); color:#fff; padding:40px; border-radius:var(--radius-lg); margin-bottom:32px; text-align:center; position:relative; overflow:hidden; }
-    .lb-hero::before { content:'🏆'; position:absolute; font-size:180px; opacity:.05; right:-20px; top:-20px; line-height:1; }
+    .lb-hero::before { content:'#'; position:absolute; font-size:180px; opacity:.05; right:-20px; top:-20px; line-height:1; }
     .lb-hero h1 { font-family:var(--font-head); font-size:32px; margin-bottom:8px; }
     .lb-hero p { opacity:.8; font-size:15px; }
     .podium { display:flex; align-items:flex-end; justify-content:center; gap:12px; margin-bottom:32px; }
@@ -90,6 +90,7 @@
 </div>
 
 <div id="loading-overlay"><div class="spinner"></div></div>
+<script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
   // Nav
@@ -105,13 +106,21 @@
   document.getElementById('hamburger').addEventListener('click', () => document.getElementById('nav-links').classList.toggle('mobile-open'));
   document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) document.getElementById('user-dd').classList.remove('open'); });
 
-  function badgeEmoji(icon) {
-    return { seedling:'🌱', bolt:'⚡', hands:'🙌', heart:'❤️', trophy:'🏆', star:'⭐' }[icon] || '🏅';
+  function badgeIcon(icon) {
+    // Map badge icons to image files
+    const iconMap = {
+      seedling: 'images/Seed.jpg',
+      bolt: 'images/Bolt.jpg',
+      hands: 'images/Hands.png',
+      heart: 'images/Heart.jpg',
+      trophy: 'images/Trophy.png'
+    };
+    return iconMap[icon] || 'images/Trophy.png';
   }
 
-  function stars(rating) {
+  function ratingText(rating) {
     const r = Math.round(rating * 2) / 2;
-    return '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '') + '☆'.repeat(5 - Math.ceil(r));
+    return `${r.toFixed(1)}/5`;
   }
 
   async function loadLeaderboard() {
@@ -136,7 +145,7 @@
     // Full list
     const lbList = document.getElementById('lb-list');
     if (!lb.length) {
-      lbList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><h3>No helpers yet</h3><p>Be the first to help!</p></div>`;
+      lbList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">Top</div><h3>No helpers yet</h3><p>Be the first to help!</p></div>`;
       return;
     }
     lbList.innerHTML = lb.map((h, idx) => {
@@ -147,11 +156,11 @@
         <div class="lb-info">
           <div class="lb-name">${h.name} ${isMe ? '<span style="font-size:11px;color:var(--gold);font-weight:600">(You)</span>' : ''}</div>
           <div class="lb-meta">
-            ${h.profession ? `<span>🔧 ${h.profession}</span>` : ''}
-            ${h.location   ? `<span>📍 ${h.location}</span>` : ''}
-            ${h.avg_rating > 0 ? `<span class="star-rating-display">${stars(h.avg_rating)} ${parseFloat(h.avg_rating).toFixed(1)}</span>` : ''}
+            ${h.profession ? `<span>${h.profession}</span>` : ''}
+            ${h.location   ? `<span>${h.location}</span>` : ''}
+            ${h.avg_rating > 0 ? `<span class="star-rating-display">Avg rating: ${ratingText(h.avg_rating)}</span>` : ''}
           </div>
-          ${h.badge_count > 0 ? `<div style="margin-top:6px"><span class="badge-chip">🏅 ${h.badge_count} badge${h.badge_count != 1 ? 's' : ''}</span></div>` : ''}
+          ${h.badge_count > 0 ? `<div style="margin-top:6px"><span class="badge-chip">${h.badge_count} badge${h.badge_count != 1 ? 's' : ''}</span></div>` : ''}
         </div>
         <div class="lb-stats">
           <div><div class="lb-stat-val">${h.resolved_count}</div><div class="lb-stat-lbl">Resolved</div></div>
@@ -165,7 +174,7 @@
     const badges = bdgData.badges || [];
     document.getElementById('badges-list').innerHTML = badges.map(b => `
       <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
-        <div style="width:40px;height:40px;border-radius:50%;background:${b.color}22;color:${b.color};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${badgeEmoji(b.icon)}</div>
+        <img src="${badgeIcon(b.icon)}" alt="${b.name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">
         <div style="flex:1">
           <div style="font-weight:700;font-size:13px;color:var(--navy)">${b.name}</div>
           <div style="font-size:11px;color:var(--text-light)">${b.description}</div>

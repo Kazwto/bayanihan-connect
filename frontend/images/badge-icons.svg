@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <symbol id="seedling" viewBox="0 0 64 64">
+      <image href="Seed.jpg" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+
+    <symbol id="bolt" viewBox="0 0 64 64">
+      <image href="Bolt.jpg" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+
+    <symbol id="hands" viewBox="0 0 64 64">
+      <image href="Hands.png" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+
+    <symbol id="heart" viewBox="0 0 64 64">
+      <image href="Heart.jpg" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+
+    <symbol id="trophy" viewBox="0 0 64 64">
+      <image href="Trophy.png" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+
+    <symbol id="star" viewBox="0 0 64 64">
+      <!-- Star uses Trophy by default (no separate Star.jpg provided) -->
+      <image href="Trophy.png" x="0" y="0" width="64" height="64" preserveAspectRatio="xMidYMid slice"/>
+    </symbol>
+  </defs>
+</svg>

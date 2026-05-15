@@ -25,7 +25,7 @@ app.use((req, res, next) => {
   
   if (req.method === 'OPTIONS') {
     console.log(`[CORS] Responding to OPTIONS with 200`);
-    return res.sendStatus(200);
+    return res.status(200).end();
   }
   next();
 });

@@ -17,14 +17,19 @@ const PORT = process.env.PORT || 5000;
 // ── Security & Middleware ────────────────────────────────────
 // Manual CORS headers
 app.use((req, res, next) => {
-  console.log(`[CORS] Setting headers for ${req.method} ${req.path}`);
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.set('Access-Control-Allow-Credentials', 'false');
+  const origin = req.get('origin');
+  const allowedOrigins = ['https://bayanihan-live.vercel.app', 'http://localhost:3000', 'http://localhost:5500', 'http://127.0.0.1:3000', 'http://127.0.0.1:5500'];
   
+  // Set CORS headers
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.set('Access-Control-Allow-Origin', origin || '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Responding to OPTIONS with 200`);
     return res.status(200).end();
   }
   next();

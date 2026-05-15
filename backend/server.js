@@ -33,11 +33,18 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
+// Trust proxy for ngrok
+app.set('trust proxy', 1);
+
+// Rate limiting (with proxy awareness)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 200,
-  message: { success: false, message: 'Too many requests, please try again later.' }
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  skip: (req, res) => {
+    // Skip rate limiting for health checks
+    return req.path === '/api/health';
+  }
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

@@ -1,5 +1,4 @@
 const express     = require('express');
-const cors        = require('cors');
 const path        = require('path');
 const rateLimit   = require('express-rate-limit');
 require('dotenv').config();
@@ -18,12 +17,14 @@ const PORT = process.env.PORT || 5000;
 // ── Security & Middleware ────────────────────────────────────
 // Manual CORS headers
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  console.log(`[CORS] Setting headers for ${req.method} ${req.path}`);
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Allow-Credentials', 'false');
   
   if (req.method === 'OPTIONS') {
+    console.log(`[CORS] Responding to OPTIONS with 200`);
     return res.sendStatus(200);
   }
   next();
